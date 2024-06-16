@@ -31,6 +31,7 @@ var (
 )
 
 func main() {
+	// CleanUserPath()
 	var err error
 	flag.Parse()
 	args := flag.Args()
@@ -174,10 +175,25 @@ func addToPath(add string, sys bool) error {
 	if strings.ContainsRune(add, ';') {
 		return errors.New("invalid path: " + add)
 	}
-	path := os.Getenv("Path")
-	if strings.Contains(path, add) {
-		fmt.Printf("skip %s\n", add)
-		return nil
+	// path := os.Getenv("Path")
+	var pathCmd *exec.Cmd
+	if sys {
+		pathCmd = exec.Command("reg", "query", "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment", "/v", "Path")
+	} else {
+		pathCmd = exec.Command("reg", "query", "HKEY_CURRENT_USER\\Environment", "/v", "Path")
+	}
+	pathByte, err := pathCmd.Output()
+	if err != nil {
+		return err
+	}
+	path := strings.TrimSpace(string(pathByte))
+	paths := strings.Split(path, ";")
+	for _, p := range paths {
+		// fmt.Printf("%d: %s\n", i, p)
+		if p == add {
+			fmt.Printf("skip %s\n", add)
+			return nil
+		}
 	}
 	fmt.Printf("add %s\n", add)
 	if strings.HasSuffix(path, ";") {
@@ -186,11 +202,44 @@ func addToPath(add string, sys bool) error {
 		path += ";" + add
 	}
 	path += ";"
+
+	// debug
+	// paths = strings.Split(path, ";")
+	// for i, p := range paths {
+	// 	fmt.Printf("%d: %s\n", i, p)
+	// }
+
 	var cmd *exec.Cmd
 	if sys {
 		cmd = exec.Command("powershell", "[System.Environment]::SetEnvironmentVariable(\"Path\", \""+path+"\", \"Machine\")")
 	} else {
 		cmd = exec.Command("powershell", "[System.Environment]::SetEnvironmentVariable(\"Path\", \""+path+"\", \"User\")")
 	}
+	return cmd.Run()
+}
+
+func CleanUserPath() error {
+	pathCmd := exec.Command("reg", "query", "HKEY_CURRENT_USER\\Environment", "/v", "Path")
+	pathByte, err := pathCmd.Output()
+	if err != nil {
+		return err
+	}
+	path := strings.TrimSpace(string(pathByte))
+	// path := os.Getenv("Path")
+	paths := strings.Split(path, ";")
+	newPaths := make(map[string]bool, len(paths))
+	for _, p := range paths {
+		newPaths[strings.TrimSpace(p)] = true
+	}
+	var newPath = ""
+	for _, k := range paths {
+		if _, ok := newPaths[k]; ok && k != "" {
+			newPath += k + ";"
+			fmt.Println(k)
+			delete(newPaths, k)
+		}
+	}
+	// return nil
+	cmd := exec.Command("powershell", "[System.Environment]::SetEnvironmentVariable(\"Path\", \""+newPath+"\", \"User\")")
 	return cmd.Run()
 }
