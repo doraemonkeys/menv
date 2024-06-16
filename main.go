@@ -32,15 +32,22 @@ var (
 
 func main() {
 	// CleanUserPath()
+	// TempFunc()
+	// return
 	var err error
 	flag.Parse()
 	args := flag.Args()
+	// fmt.Println("args:", args)
 	if *delenv && *envFilePath == "" && len(args) != 1 ||
 		(len(os.Args) <= 1) {
 		flag.Usage()
 		return
 	}
 	if *addPath != "" {
+		if len(args) != 0 {
+			fmt.Printf("invalid args: %v\n", args)
+			return
+		}
 		err := addToPath(*addPath, *setSystem)
 		if err != nil {
 			panic(err)
@@ -175,26 +182,32 @@ func addToPath(add string, sys bool) error {
 	if strings.ContainsRune(add, ';') {
 		return errors.New("invalid path: " + add)
 	}
-	// path := os.Getenv("Path")
-	var pathCmd *exec.Cmd
+	var (
+		paths []string
+		path  string
+		err   error
+	)
 	if sys {
-		pathCmd = exec.Command("reg", "query", "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment", "/v", "Path")
+		paths, err = QuerySystemEnvironmentPath()
 	} else {
-		pathCmd = exec.Command("reg", "query", "HKEY_CURRENT_USER\\Environment", "/v", "Path")
+		paths, err = QueryUserEnvironmentPath()
 	}
-	pathByte, err := pathCmd.Output()
 	if err != nil {
 		return err
 	}
-	path := strings.TrimSpace(string(pathByte))
-	paths := strings.Split(path, ";")
 	for _, p := range paths {
 		// fmt.Printf("%d: %s\n", i, p)
+		p = strings.TrimSpace(strings.TrimSuffix(p, "\\"))
+		p = strings.TrimSpace(strings.TrimSuffix(p, "/"))
+		add = strings.TrimSpace(strings.TrimSuffix(add, "\\"))
+		add = strings.TrimSpace(strings.TrimSuffix(add, "/"))
 		if p == add {
 			fmt.Printf("skip %s\n", add)
 			return nil
 		}
+		path += p + ";"
 	}
+
 	fmt.Printf("add %s\n", add)
 	if strings.HasSuffix(path, ";") {
 		path += add
@@ -242,4 +255,50 @@ func CleanUserPath() error {
 	// return nil
 	cmd := exec.Command("powershell", "[System.Environment]::SetEnvironmentVariable(\"Path\", \""+newPath+"\", \"User\")")
 	return cmd.Run()
+}
+
+func QueryUserEnvironmentPath() ([]string, error) {
+	pathCmd := exec.Command("reg", "query", "HKEY_CURRENT_USER\\Environment", "/v", "Path")
+	pathByte, err := pathCmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	nowPath := strings.TrimSpace(string(pathByte))
+	keyWords := "Path    REG_SZ"
+	if !strings.Contains(nowPath, keyWords) {
+		return nil, errors.New("query path failed")
+	}
+	nowPath = strings.TrimSpace(nowPath[strings.LastIndex(nowPath, keyWords)+len(keyWords):])
+	nowPathSlice := strings.Split(nowPath, ";")
+	for i := 0; i < len(nowPathSlice); i++ {
+		nowPathSlice[i] = strings.TrimSpace(nowPathSlice[i])
+		if nowPathSlice[i] == "" {
+			nowPathSlice = append(nowPathSlice[:i], nowPathSlice[i+1:]...)
+			i--
+		}
+	}
+	return nowPathSlice, nil
+}
+
+func QuerySystemEnvironmentPath() ([]string, error) {
+	pathCmd := exec.Command("reg", "query", "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment", "/v", "Path")
+	pathByte, err := pathCmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	nowPath := strings.TrimSpace(string(pathByte))
+	keyWords := "Path    REG_SZ"
+	if !strings.Contains(nowPath, keyWords) {
+		return nil, errors.New("query path failed")
+	}
+	nowPath = strings.TrimSpace(nowPath[strings.LastIndex(nowPath, keyWords)+len(keyWords):])
+	nowPathSlice := strings.Split(nowPath, ";")
+	for i := 0; i < len(nowPathSlice); i++ {
+		nowPathSlice[i] = strings.TrimSpace(nowPathSlice[i])
+		if nowPathSlice[i] == "" {
+			nowPathSlice = append(nowPathSlice[:i], nowPathSlice[i+1:]...)
+			i--
+		}
+	}
+	return nowPathSlice, nil
 }
