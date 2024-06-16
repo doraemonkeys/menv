@@ -26,7 +26,7 @@ var (
 	envFilePath *string = flag.String("file", "", "env file path")
 	delenv      *bool   = flag.Bool("d", false, "delete env")
 	setSystem   *bool   = flag.Bool("sys", false, "set system env")
-	startWith   *string = flag.String("startWith", "export", "line start with")
+	startWith   *string = flag.String("startWith", "", "line start with")
 	addPath     *string = flag.String("add", "", "add path")
 )
 
