@@ -174,7 +174,7 @@ func addToPath(add string, sys bool) error {
 	if strings.ContainsRune(add, ';') {
 		return errors.New("invalid path: " + add)
 	}
-	path := os.Getenv("PATH")
+	path := os.Getenv("Path")
 	if strings.Contains(path, add) {
 		fmt.Printf("skip %s\n", add)
 		return nil
@@ -188,9 +188,9 @@ func addToPath(add string, sys bool) error {
 	path += ";"
 	var cmd *exec.Cmd
 	if sys {
-		cmd = exec.Command("powershell", "[System.Environment]::SetEnvironmentVariable(\"PATH\", \""+path+"\", \"Machine\")")
+		cmd = exec.Command("powershell", "[System.Environment]::SetEnvironmentVariable(\"Path\", \""+path+"\", \"Machine\")")
 	} else {
-		cmd = exec.Command("powershell", "[System.Environment]::SetEnvironmentVariable(\"PATH\", \""+path+"\", \"User\")")
+		cmd = exec.Command("powershell", "[System.Environment]::SetEnvironmentVariable(\"Path\", \""+path+"\", \"User\")")
 	}
 	return cmd.Run()
 }
