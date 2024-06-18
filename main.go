@@ -266,7 +266,7 @@ func QueryUserEnvironmentPath() ([]string, error) {
 	nowPath := strings.TrimSpace(string(pathByte))
 	keyWords := "Path    REG_SZ"
 	if !strings.Contains(nowPath, keyWords) {
-		return nil, errors.New("query path failed")
+		return nil, errors.New("query path failed, get path: " + nowPath)
 	}
 	nowPath = strings.TrimSpace(nowPath[strings.LastIndex(nowPath, keyWords)+len(keyWords):])
 	nowPathSlice := strings.Split(nowPath, ";")
