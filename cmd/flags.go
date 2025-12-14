@@ -16,4 +16,5 @@ var (
 	ExportPath  = flag.String("export", "", "export env vars to file (sh/bat/json)")
 	BackupPath  = flag.String("backup", "", "backup env vars to JSON file")
 	RestorePath = flag.String("restore", "", "restore env vars from backup file")
+	Search      = flag.String("search", "", "search env vars by keyword")
 )

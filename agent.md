@@ -124,10 +124,11 @@ menv -restore backup.json       # 恢复用户环境变量
 menv -restore backup.json -sys  # 恢复系统环境变量
 ```
 
-### 5. **搜索功能**
+### 5. **搜索功能 已实现**
 ```bash
 menv -search java       # 搜索包含 "java" 的变量名或值
 menv -search java -path # 在 PATH 中搜索包含 "java" 的路径
+menv -search java -sys  # 搜索系统环境变量
 ```
 
 ### 6. **PATH 检查**

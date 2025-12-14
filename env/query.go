@@ -90,6 +90,36 @@ func parseRegOutput(output string) []EnvVar {
 	return result
 }
 
+// SearchUser searches user env vars by keyword (case-insensitive, matches key or value).
+func SearchUser(keyword string) ([]EnvVar, error) {
+	envVars, err := ListUser()
+	if err != nil {
+		return nil, err
+	}
+	return filterByKeyword(envVars, keyword), nil
+}
+
+// SearchSystem searches system env vars by keyword (case-insensitive, matches key or value).
+func SearchSystem(keyword string) ([]EnvVar, error) {
+	envVars, err := ListSystem()
+	if err != nil {
+		return nil, err
+	}
+	return filterByKeyword(envVars, keyword), nil
+}
+
+func filterByKeyword(envVars []EnvVar, keyword string) []EnvVar {
+	keyword = strings.ToLower(keyword)
+	var result []EnvVar
+	for _, e := range envVars {
+		if strings.Contains(strings.ToLower(e.Key), keyword) ||
+			strings.Contains(strings.ToLower(e.Value), keyword) {
+			result = append(result, e)
+		}
+	}
+	return result
+}
+
 // parseRegLine parses a line like "    JAVA_HOME    REG_SZ    C:\Java\jdk"
 func parseRegLine(line string) *EnvVar {
 	// Registry output format: NAME    TYPE    VALUE

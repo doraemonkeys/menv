@@ -54,6 +54,35 @@ func parsePathOutput(output string) ([]string, error) {
 	return nil, errors.New("query path failed")
 }
 
+// SearchUserPath searches user PATH for entries containing keyword (case-insensitive).
+func SearchUserPath(keyword string) ([]string, error) {
+	paths, err := QueryUserPath()
+	if err != nil {
+		return nil, err
+	}
+	return filterPaths(paths, keyword), nil
+}
+
+// SearchSystemPath searches system PATH for entries containing keyword (case-insensitive).
+func SearchSystemPath(keyword string) ([]string, error) {
+	paths, err := QuerySystemPath()
+	if err != nil {
+		return nil, err
+	}
+	return filterPaths(paths, keyword), nil
+}
+
+func filterPaths(paths []string, keyword string) []string {
+	keyword = strings.ToLower(keyword)
+	var result []string
+	for _, p := range paths {
+		if strings.Contains(strings.ToLower(p), keyword) {
+			result = append(result, p)
+		}
+	}
+	return result
+}
+
 // splitAndCleanPath splits path by semicolon and removes empty entries.
 func splitAndCleanPath(path string) []string {
 	paths := strings.Split(path, ";")

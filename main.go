@@ -32,6 +32,8 @@ func init() {
 		fmt.Println("  -export <path>    Export env vars to file (sh/bat/json)")
 		fmt.Println("  -backup <path>    Backup env vars to JSON file")
 		fmt.Println("  -restore <path>   Restore env vars from backup file")
+		fmt.Println("  -search <keyword> Search env vars by keyword")
+		fmt.Println("                    Use with -path to search in PATH")
 		fmt.Println()
 		color.Info("Examples:")
 		fmt.Println("  menv -list                         # List user env vars")
@@ -58,6 +60,8 @@ func init() {
 		fmt.Println("  menv -backup backup.json -sys      # Backup system env vars")
 		fmt.Println("  menv -restore backup.json          # Restore user env vars")
 		fmt.Println("  menv -restore backup.json -sys     # Restore system env vars")
+		fmt.Println("  menv -search java                  # Search env vars for 'java'")
+		fmt.Println("  menv -search java -path            # Search PATH for 'java'")
 	}
 }
 
@@ -80,6 +84,14 @@ func run(args []string) error {
 	// Handle -get flag: get specific env var
 	if *cmd.GetEnv != "" {
 		return getEnvVar(*cmd.GetEnv)
+	}
+
+	// Handle -search flag: search env vars or PATH
+	if *cmd.Search != "" {
+		if *cmd.ShowPath {
+			return searchPath(*cmd.Search)
+		}
+		return searchEnvVars(*cmd.Search)
 	}
 
 	// Handle -path flag: display PATH
@@ -316,5 +328,63 @@ func restoreEnvVars(filename string) error {
 	}
 
 	color.Success("Restored %d env vars", count)
+	return nil
+}
+
+func searchEnvVars(keyword string) error {
+	var results []env.EnvVar
+	var err error
+
+	if *cmd.SetSystem {
+		color.Info("Searching system env vars for '%s':", keyword)
+		results, err = env.SearchSystem(keyword)
+	} else {
+		color.Info("Searching user env vars for '%s':", keyword)
+		results, err = env.SearchUser(keyword)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if len(results) == 0 {
+		color.Warning("No matches found")
+		return nil
+	}
+
+	fmt.Println()
+	for _, e := range results {
+		fmt.Printf("%s%s%s=%s\n", color.Green, e.Key, color.Reset, e.Value)
+	}
+	fmt.Printf("\nFound: %d\n", len(results))
+	return nil
+}
+
+func searchPath(keyword string) error {
+	var results []string
+	var err error
+
+	if *cmd.SetSystem {
+		color.Info("Searching system PATH for '%s':", keyword)
+		results, err = path.SearchSystemPath(keyword)
+	} else {
+		color.Info("Searching user PATH for '%s':", keyword)
+		results, err = path.SearchUserPath(keyword)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if len(results) == 0 {
+		color.Warning("No matches found")
+		return nil
+	}
+
+	fmt.Println()
+	for i, p := range results {
+		fmt.Printf("%s%3d%s  %s\n", color.Cyan, i+1, color.Reset, p)
+	}
+	fmt.Printf("\nFound: %d\n", len(results))
 	return nil
 }
