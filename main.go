@@ -5,27 +5,44 @@ import (
 	"fmt"
 	"os"
 
-	"setenv/cmd"
-	"setenv/env"
-	"setenv/path"
+	"github.com/doraemonkeys/menv/cmd"
+	"github.com/doraemonkeys/menv/color"
+	"github.com/doraemonkeys/menv/env"
+	"github.com/doraemonkeys/menv/path"
 )
 
-// Usage examples:
-// setenv -file xxx.sh -startWith export  # Set env vars from file
-// setenv key value                        # Set user env var
-// setenv -sys key value                   # Set system env var
-// setenv -d key                           # Delete user env var
-// setenv -d -sys key                      # Delete system env var
-// setenv -d -file xxx.sh                  # Delete env vars from file
-// setenv -add "C:\path\to\dir"            # Add to user PATH
-// setenv -add "C:\path\to\dir" -sys       # Add to system PATH
+func init() {
+	flag.Usage = func() {
+		fmt.Println(color.Sprintf(color.BoldCyan, "menv") + " - Windows Environment Variable Manager")
+		fmt.Println()
+		color.Info("Usage:")
+		fmt.Println("  menv [options] [key] [value]")
+		fmt.Println()
+		color.Info("Options:")
+		fmt.Println("  -add <path>       Add path to PATH variable")
+		fmt.Println("  -d                Delete environment variable")
+		fmt.Println("  -sys              Target system env (default: user)")
+		fmt.Println("  -file <path>      Read env vars from file")
+		fmt.Println("  -startWith <str>  Filter lines starting with string")
+		fmt.Println()
+		color.Info("Examples:")
+		fmt.Println("  menv GOPATH C:\\Go                  # Set user env var")
+		fmt.Println("  menv -sys GOPATH C:\\Go             # Set system env var")
+		fmt.Println("  menv -d GOPATH                     # Delete user env var")
+		fmt.Println("  menv -d -sys GOPATH                # Delete system env var")
+		fmt.Println("  menv -add \"C:\\bin\"                 # Add to user PATH")
+		fmt.Println("  menv -add \"C:\\bin\" -sys            # Add to system PATH")
+		fmt.Println("  menv -file env.sh -startWith export")
+	}
+}
 
 func main() {
 	flag.Parse()
 	args := flag.Args()
 
 	if err := run(args); err != nil {
-		panic(err)
+		color.Error("Error: %v", err)
+		os.Exit(1)
 	}
 }
 
@@ -39,8 +56,7 @@ func run(args []string) error {
 	// Handle -add flag: add path to PATH
 	if *cmd.AddPath != "" {
 		if len(args) != 0 {
-			fmt.Printf("invalid args: %v\n", args)
-			return nil
+			return fmt.Errorf("unexpected arguments: %v", args)
 		}
 		return path.Add(*cmd.AddPath, *cmd.SetSystem)
 	}
@@ -59,6 +75,9 @@ func run(args []string) error {
 	}
 
 	// Default: set env var
+	if len(args) < 2 {
+		return fmt.Errorf("missing value for key '%s'", args[0])
+	}
 	if *cmd.SetSystem {
 		return env.SetSystem(args[0], args[1])
 	}

@@ -1,4 +1,4 @@
-# setenv
+# menv
 
 ## how to install
 

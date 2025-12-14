@@ -2,9 +2,10 @@ package path
 
 import (
 	"errors"
-	"fmt"
 	"os/exec"
 	"strings"
+
+	"github.com/doraemonkeys/menv/color"
 )
 
 // Add adds a path to the PATH environment variable.
@@ -37,24 +38,29 @@ func Add(add string, sys bool) error {
 	for _, p := range paths {
 		p = normalizePath(p)
 		if p == add {
-			fmt.Printf("skip %s\n", add)
+			color.Warning("skip %s (already exists)", add)
 			return nil
 		}
 		newPath += p + ";"
 	}
 
-	fmt.Printf("add %s\n", add)
 	newPath += add + ";"
 
 	// Use PowerShell to set the path (avoids setx 1024 char limit)
 	var cmd *exec.Cmd
+	scope := "user"
 	if sys {
+		scope = "system"
 		cmd = exec.Command("powershell", "[System.Environment]::SetEnvironmentVariable(\"Path\", \""+newPath+"\", \"Machine\")")
 	} else {
 		cmd = exec.Command("powershell", "[System.Environment]::SetEnvironmentVariable(\"Path\", \""+newPath+"\", \"User\")")
 	}
 
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	color.Success("add  %s [%s PATH]", add, scope)
+	return nil
 }
 
 // CleanUser removes duplicate entries from user PATH.
@@ -69,18 +75,24 @@ func CleanUser() error {
 	paths := strings.Split(path, ";")
 	seen := make(map[string]bool, len(paths))
 	var newPath string
+	removed := 0
 
 	for _, p := range paths {
 		p = strings.TrimSpace(p)
 		if p != "" && !seen[p] {
 			seen[p] = true
 			newPath += p + ";"
-			fmt.Println(p)
+		} else if p != "" {
+			removed++
 		}
 	}
 
 	cmd := exec.Command("powershell", "[System.Environment]::SetEnvironmentVariable(\"Path\", \""+newPath+"\", \"User\")")
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	color.Success("cleaned user PATH, removed %d duplicates", removed)
+	return nil
 }
 
 // normalizePath removes trailing slashes and trims whitespace.
