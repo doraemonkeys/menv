@@ -13,4 +13,5 @@ var (
 	ListEnv     = flag.Bool("list", false, "list all env vars")
 	GetEnv      = flag.String("get", "", "get env var value")
 	ShowPath    = flag.Bool("path", false, "display PATH")
+	ExportPath  = flag.String("export", "", "export env vars to file (sh/bat/json)")
 )

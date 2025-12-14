@@ -58,3 +58,6 @@ lint:
 clean:
 	rm -f cover.out coverage.out
 
+.PHONY: build
+build:
+	go build

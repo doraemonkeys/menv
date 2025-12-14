@@ -4,17 +4,37 @@
 
 ```
 menv/
-├── main.go          # 入口，命令行解析与分发
-├── cmd/flags.go     # 命令行标志定义
+├── main.go              # 入口，命令行解析与分发
+├── Makefile             # 构建与测试命令
+├── cmd/
+│   └── flags.go         # 命令行标志定义
 ├── env/
-│   ├── user.go      # 用户环境变量 Set/Unset/SetPS
-│   ├── system.go    # 系统环境变量 SetSystem/UnsetSystem
-│   └── parser.go    # 环境文件解析 ParseEnvFile
+│   ├── user.go          # 用户环境变量 Set/Unset/SetPS
+│   ├── system.go        # 系统环境变量 SetSystem/UnsetSystem
+│   ├── parser.go        # 环境文件解析 ParseEnvFile
+│   ├── query.go         # 环境变量查询 (List/Get)
+│   └── export.go        # 环境变量导出 (ExportToFile)
 ├── path/
-│   ├── query.go     # 注册表查询 PATH (QueryUserPath/QuerySystemPath)
-│   └── modify.go    # PATH 操作 (Add/CleanUser)
-└── color/color.go   # ANSI 彩色输出 (Success/Error/Warning/Info)
+│   ├── query.go         # 注册表查询 PATH (QueryUserPath/QuerySystemPath)
+│   └── modify.go        # PATH 操作 (Add/Remove/Clean)
+├── color/
+│   └── color.go         # ANSI 彩色输出 (Success/Error/Warning/Info)
+├── scripts/
+│   └── check-file-count.sh  # CI 文件数量检查脚本
+└── .github/
+    └── workflows/
+        └── ci.yml       # GitHub Actions CI 配置
 ```
+
+这是一个Windows环境变量管理工具，当前支持：
+
+**已有功能：**
+
+- 设置/删除用户环境变量
+- 设置/删除系统环境变量
+- 从文件批量导入环境变量
+- 添加路径到 PATH
+- PATH 去重清理（`CleanUser` 已实现但未暴露）
 
 ## 核心功能
 
@@ -54,18 +74,16 @@ Examples:
   menv -file env.sh -startWith export
 
 
+## CI
 
-现在我已经了解了完整的代码结构。这是一个Windows环境变量管理工具，当前支持：
+```bash
+make test check-coverage lint check-file-count
+```
 
-**已有功能：**
 
-- 设置/删除用户环境变量
-- 设置/删除系统环境变量
-- 从文件批量导入环境变量
-- 添加路径到 PATH
-- PATH 去重清理（`CleanUser` 已实现但未暴露）
 
----
+
+
 
 ## 建议增加的实用功能
 
@@ -84,7 +102,7 @@ menv -clean             # 清理 PATH（去重 + 移除不存在的目录）
 menv -clean -sys        # 清理系统 PATH
 ```
 
-### 3. **导出环境变量 (`-export`)**
+### 3. **导出环境变量 (`-export`) 已实现**
 ```bash
 menv -export env.sh             # 导出为 shell 格式
 menv -export env.bat            # 导出为 bat 格式

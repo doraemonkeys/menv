@@ -29,6 +29,7 @@ func init() {
 		fmt.Println("  -sys              Target system env (default: user)")
 		fmt.Println("  -file <path>      Read env vars from file")
 		fmt.Println("  -startWith <str>  Filter lines starting with string")
+		fmt.Println("  -export <path>    Export env vars to file (sh/bat/json)")
 		fmt.Println()
 		color.Info("Examples:")
 		fmt.Println("  menv -list                         # List user env vars")
@@ -47,6 +48,10 @@ func init() {
 		fmt.Println("  menv -clean                        # Clean user PATH")
 		fmt.Println("  menv -clean -sys                   # Clean system PATH")
 		fmt.Println("  menv -file env.sh -startWith export")
+		fmt.Println("  menv -export env.sh                # Export user env as shell")
+		fmt.Println("  menv -export env.bat               # Export user env as batch")
+		fmt.Println("  menv -export env.json              # Export user env as JSON")
+		fmt.Println("  menv -export env.json -sys         # Export system env as JSON")
 	}
 }
 
@@ -74,6 +79,11 @@ func run(args []string) error {
 	// Handle -path flag: display PATH
 	if *cmd.ShowPath {
 		return showPath()
+	}
+
+	// Handle -export flag: export env vars to file
+	if *cmd.ExportPath != "" {
+		return exportEnvVars(*cmd.ExportPath)
 	}
 
 	// Validate arguments
@@ -231,5 +241,28 @@ func showPath() error {
 		fmt.Printf("%s%3d%s  %s\n", color.Cyan, i+1, color.Reset, p)
 	}
 	fmt.Printf("\nTotal: %d\n", len(paths))
+	return nil
+}
+
+func exportEnvVars(filename string) error {
+	var envVars []env.EnvVar
+	var err error
+
+	if *cmd.SetSystem {
+		envVars, err = env.ListSystem()
+	} else {
+		envVars, err = env.ListUser()
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if err := env.Export(filename, envVars); err != nil {
+		return err
+	}
+
+	format := env.DetectFormat(filename)
+	color.Success("Exported %d env vars to %s (format: %s)", len(envVars), filename, format)
 	return nil
 }
