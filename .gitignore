@@ -37,3 +37,4 @@ cover.out
 TODO
 *_gitignore*
 *gitignore_*
+.cursor/
