@@ -54,6 +54,9 @@ Options:
   -sys              Target system env (default: user)
   -file <path>      Read env vars from file
   -startWith <str>  Filter lines starting with string
+  -export <path>    Export env vars to file (sh/bat/json)
+  -backup <path>    Backup env vars to JSON file
+  -restore <path>   Restore env vars from backup file
 
 Examples:
   menv -list                         # List user env vars
@@ -72,6 +75,10 @@ Examples:
   menv -clean                        # Clean user PATH
   menv -clean -sys                   # Clean system PATH
   menv -file env.sh -startWith export
+  menv -backup backup.json           # Backup user env vars
+  menv -backup backup.json -sys      # Backup system env vars
+  menv -restore backup.json          # Restore user env vars
+  menv -restore backup.json -sys     # Restore system env vars
 
 
 ## CI
@@ -109,10 +116,12 @@ menv -export env.bat            # 导出为 bat 格式
 menv -export env.json           # 导出为 JSON 格式
 ```
 
-### 4. **备份与恢复**
+### 4. **备份与恢复 已实现**
 ```bash
-menv -backup backup.json        # 备份当前环境变量
-menv -restore backup.json       # 从备份恢复
+menv -backup backup.json        # 备份用户环境变量
+menv -backup backup.json -sys   # 备份系统环境变量
+menv -restore backup.json       # 恢复用户环境变量
+menv -restore backup.json -sys  # 恢复系统环境变量
 ```
 
 ### 5. **搜索功能**

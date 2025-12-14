@@ -14,4 +14,6 @@ var (
 	GetEnv      = flag.String("get", "", "get env var value")
 	ShowPath    = flag.Bool("path", false, "display PATH")
 	ExportPath  = flag.String("export", "", "export env vars to file (sh/bat/json)")
+	BackupPath  = flag.String("backup", "", "backup env vars to JSON file")
+	RestorePath = flag.String("restore", "", "restore env vars from backup file")
 )

@@ -30,6 +30,8 @@ func init() {
 		fmt.Println("  -file <path>      Read env vars from file")
 		fmt.Println("  -startWith <str>  Filter lines starting with string")
 		fmt.Println("  -export <path>    Export env vars to file (sh/bat/json)")
+		fmt.Println("  -backup <path>    Backup env vars to JSON file")
+		fmt.Println("  -restore <path>   Restore env vars from backup file")
 		fmt.Println()
 		color.Info("Examples:")
 		fmt.Println("  menv -list                         # List user env vars")
@@ -52,6 +54,10 @@ func init() {
 		fmt.Println("  menv -export env.bat               # Export user env as batch")
 		fmt.Println("  menv -export env.json              # Export user env as JSON")
 		fmt.Println("  menv -export env.json -sys         # Export system env as JSON")
+		fmt.Println("  menv -backup backup.json           # Backup user env vars")
+		fmt.Println("  menv -backup backup.json -sys      # Backup system env vars")
+		fmt.Println("  menv -restore backup.json          # Restore user env vars")
+		fmt.Println("  menv -restore backup.json -sys     # Restore system env vars")
 	}
 }
 
@@ -84,6 +90,16 @@ func run(args []string) error {
 	// Handle -export flag: export env vars to file
 	if *cmd.ExportPath != "" {
 		return exportEnvVars(*cmd.ExportPath)
+	}
+
+	// Handle -backup flag: backup env vars to file
+	if *cmd.BackupPath != "" {
+		return backupEnvVars(*cmd.BackupPath)
+	}
+
+	// Handle -restore flag: restore env vars from file
+	if *cmd.RestorePath != "" {
+		return restoreEnvVars(*cmd.RestorePath)
 	}
 
 	// Validate arguments
@@ -264,5 +280,41 @@ func exportEnvVars(filename string) error {
 
 	format := env.DetectFormat(filename)
 	color.Success("Exported %d env vars to %s (format: %s)", len(envVars), filename, format)
+	return nil
+}
+
+func backupEnvVars(filename string) error {
+	count, err := env.Backup(filename, *cmd.SetSystem)
+	if err != nil {
+		return err
+	}
+
+	source := "user"
+	if *cmd.SetSystem {
+		source = "system"
+	}
+	color.Success("Backed up %d %s env vars to %s", count, source, filename)
+	return nil
+}
+
+func restoreEnvVars(filename string) error {
+	backup, err := env.LoadBackup(filename)
+	if err != nil {
+		return err
+	}
+
+	target := "user"
+	if *cmd.SetSystem {
+		target = "system"
+	}
+	color.Info("Restoring %d env vars from %s backup (created: %s) to %s...",
+		len(backup.EnvVars), backup.Source, backup.CreatedAt.Format("2006-01-02 15:04:05"), target)
+
+	count, err := env.Restore(filename, *cmd.SetSystem)
+	if err != nil {
+		return err
+	}
+
+	color.Success("Restored %d env vars", count)
 	return nil
 }
