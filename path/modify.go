@@ -2,6 +2,7 @@ package path
 
 import (
 	"errors"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -63,36 +64,147 @@ func Add(add string, sys bool) error {
 	return nil
 }
 
-// CleanUser removes duplicate entries from user PATH.
-func CleanUser() error {
-	pathCmd := exec.Command("reg", "query", userEnvRegPath, "/v", "Path")
-	pathByte, err := pathCmd.Output()
+// Remove removes a path from the PATH environment variable.
+func Remove(remove string, sys bool) error {
+	var (
+		paths []string
+		err   error
+	)
+
+	if sys {
+		paths, err = QuerySystemPath()
+	} else {
+		paths, err = QueryUserPath()
+	}
 	if err != nil {
 		return err
 	}
 
-	path := strings.TrimSpace(string(pathByte))
-	paths := strings.Split(path, ";")
-	seen := make(map[string]bool, len(paths))
-	var newPath string
-	removed := 0
+	remove = normalizePath(remove)
+	removeNorm := strings.ToLower(remove)
 
+	var newPath string
+	found := false
 	for _, p := range paths {
-		p = strings.TrimSpace(p)
-		if p != "" && !seen[p] {
-			seen[p] = true
-			newPath += p + ";"
-		} else if p != "" {
-			removed++
+		pNorm := strings.ToLower(normalizePath(p))
+		if pNorm == removeNorm {
+			found = true
+			continue
 		}
+		newPath += p + ";"
 	}
 
-	cmd := exec.Command("powershell", "[System.Environment]::SetEnvironmentVariable(\"Path\", \""+newPath+"\", \"User\")")
+	if !found {
+		color.Warning("path not found: %s", remove)
+		return nil
+	}
+
+	scope := "user"
+	target := "User"
+	if sys {
+		scope = "system"
+		target = "Machine"
+	}
+
+	cmd := exec.Command("powershell", "[System.Environment]::SetEnvironmentVariable(\"Path\", \""+newPath+"\", \""+target+"\")")
 	if err := cmd.Run(); err != nil {
 		return err
 	}
-	color.Success("cleaned user PATH, removed %d duplicates", removed)
+	color.Success("removed %s [%s PATH]", remove, scope)
 	return nil
+}
+
+// Clean removes duplicate entries and invalid paths from PATH.
+func Clean(sys bool) error {
+	var (
+		paths []string
+		err   error
+	)
+
+	if sys {
+		paths, err = QuerySystemPath()
+	} else {
+		paths, err = QueryUserPath()
+	}
+	if err != nil {
+		return err
+	}
+
+	seen := make(map[string]bool, len(paths))
+	var newPath string
+	duplicates := 0
+	invalid := 0
+
+	for _, p := range paths {
+		pNorm := strings.ToLower(normalizePath(p))
+
+		if seen[pNorm] {
+			color.Warning("duplicate: %s", p)
+			duplicates++
+			continue
+		}
+		seen[pNorm] = true
+
+		if !pathExists(p) {
+			color.Warning("not exist: %s", p)
+			invalid++
+			continue
+		}
+
+		newPath += p + ";"
+	}
+
+	if duplicates == 0 && invalid == 0 {
+		color.Success("PATH is clean, no changes needed")
+		return nil
+	}
+
+	scope := "user"
+	target := "User"
+	if sys {
+		scope = "system"
+		target = "Machine"
+	}
+
+	cmd := exec.Command("powershell", "[System.Environment]::SetEnvironmentVariable(\"Path\", \""+newPath+"\", \""+target+"\")")
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	color.Success("cleaned %s PATH: removed %d duplicates, %d invalid paths", scope, duplicates, invalid)
+	return nil
+}
+
+func pathExists(p string) bool {
+	p = expandPath(p)
+	_, err := os.Stat(p)
+	return err == nil
+}
+
+func expandPath(p string) string {
+	p = os.ExpandEnv(p)
+	p = os.Expand(p, func(key string) string {
+		return os.Getenv(key)
+	})
+	return expandWindowsEnv(p)
+}
+
+// expandWindowsEnv expands Windows-style %VAR% environment variables.
+func expandWindowsEnv(p string) string {
+	for {
+		start := strings.Index(p, "%")
+		if start == -1 {
+			break
+		}
+		end := strings.Index(p[start+1:], "%")
+		if end == -1 {
+			break
+		}
+		end += start + 1
+		varName := p[start+1 : end]
+		value := os.Getenv(varName)
+		p = p[:start] + value + p[end+1:]
+	}
+	return p
 }
 
 // normalizePath removes trailing slashes and trims whitespace.

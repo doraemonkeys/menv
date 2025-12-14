@@ -23,6 +23,8 @@ func init() {
 		fmt.Println("  -get <key>        Get env var value")
 		fmt.Println("  -path             Display PATH (one per line)")
 		fmt.Println("  -add <path>       Add path to PATH variable")
+		fmt.Println("  -rm <path>        Remove path from PATH variable")
+		fmt.Println("  -clean            Clean PATH (dedupe + remove invalid)")
 		fmt.Println("  -d                Delete environment variable")
 		fmt.Println("  -sys              Target system env (default: user)")
 		fmt.Println("  -file <path>      Read env vars from file")
@@ -40,6 +42,10 @@ func init() {
 		fmt.Println("  menv -d -sys GOPATH                # Delete system env var")
 		fmt.Println("  menv -add \"C:\\bin\"                 # Add to user PATH")
 		fmt.Println("  menv -add \"C:\\bin\" -sys            # Add to system PATH")
+		fmt.Println("  menv -rm \"C:\\bin\"                  # Remove from user PATH")
+		fmt.Println("  menv -rm \"C:\\bin\" -sys             # Remove from system PATH")
+		fmt.Println("  menv -clean                        # Clean user PATH")
+		fmt.Println("  menv -clean -sys                   # Clean system PATH")
 		fmt.Println("  menv -file env.sh -startWith export")
 	}
 }
@@ -71,7 +77,8 @@ func run(args []string) error {
 	}
 
 	// Validate arguments
-	if *cmd.DelEnv && *cmd.EnvFilePath == "" && len(args) != 1 || len(os.Args) <= 1 {
+	noArgsRequired := *cmd.RemovePath != "" || *cmd.CleanPath
+	if !noArgsRequired && (*cmd.DelEnv && *cmd.EnvFilePath == "" && len(args) != 1 || len(os.Args) <= 1) {
 		flag.Usage()
 		return nil
 	}
@@ -82,6 +89,22 @@ func run(args []string) error {
 			return fmt.Errorf("unexpected arguments: %v", args)
 		}
 		return path.Add(*cmd.AddPath, *cmd.SetSystem)
+	}
+
+	// Handle -rm flag: remove path from PATH
+	if *cmd.RemovePath != "" {
+		if len(args) != 0 {
+			return fmt.Errorf("unexpected arguments: %v", args)
+		}
+		return path.Remove(*cmd.RemovePath, *cmd.SetSystem)
+	}
+
+	// Handle -clean flag: clean PATH
+	if *cmd.CleanPath {
+		if len(args) != 0 {
+			return fmt.Errorf("unexpected arguments: %v", args)
+		}
+		return path.Clean(*cmd.SetSystem)
 	}
 
 	// Handle -file flag: process env file
