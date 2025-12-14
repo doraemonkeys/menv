@@ -56,6 +56,7 @@ func init() {
 		fmt.Println("  menv -rm \"C:\\bin\" -sys             # Remove from system PATH")
 		fmt.Println("  menv -clean                        # Clean user PATH")
 		fmt.Println("  menv -clean -sys                   # Clean system PATH")
+		fmt.Println("  menv -clean -i                     # Clean with confirmation")
 		fmt.Println("  menv -file env.sh -startWith export")
 		fmt.Println("  menv -export env.sh                # Export user env as shell")
 		fmt.Println("  menv -export env.bat               # Export user env as batch")
@@ -167,7 +168,7 @@ func handlePathCommands(args []string) (handled bool, err error) {
 		if len(args) != 0 {
 			return true, fmt.Errorf("unexpected arguments: %v", args)
 		}
-		return true, path.Clean(*cmd.SetSystem)
+		return true, cleanPath()
 	}
 
 	if *cmd.CheckPath {
@@ -416,6 +417,44 @@ func searchPath(keyword string) error {
 	}
 	fmt.Printf("\nFound: %d\n", len(results))
 	return nil
+}
+
+func cleanPath() error {
+	scope := "user"
+	if *cmd.SetSystem {
+		scope = "system"
+	}
+
+	color.Info("Cleaning %s PATH...", scope)
+
+	result, err := path.PreviewClean(*cmd.SetSystem)
+	if err != nil {
+		return err
+	}
+
+	if len(result.Duplicates) == 0 && len(result.Invalid) == 0 {
+		color.Success("PATH is clean, no changes needed")
+		return nil
+	}
+
+	fmt.Println()
+	for _, p := range result.Duplicates {
+		fmt.Printf("  %sduplicate:%s %s\n", color.Yellow, color.Reset, p)
+	}
+	for _, p := range result.Invalid {
+		fmt.Printf("  %snot exist:%s %s\n", color.Red, color.Reset, p)
+	}
+	fmt.Printf("\nFound %d duplicate(s), %d invalid path(s)\n", len(result.Duplicates), len(result.Invalid))
+
+	if *cmd.Interactive {
+		total := len(result.Duplicates) + len(result.Invalid)
+		if !confirmAction(fmt.Sprintf("Remove %d path(s)?", total)) {
+			color.Warning("Cancelled")
+			return nil
+		}
+	}
+
+	return path.ApplyClean(result.NewPath, *cmd.SetSystem)
 }
 
 func checkPath() error {

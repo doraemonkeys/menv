@@ -77,6 +77,7 @@ Examples:
   menv -rm "C:\bin" -sys             # Remove from system PATH
   menv -clean                        # Clean user PATH
   menv -clean -sys                   # Clean system PATH
+  menv -clean -i                     # Clean with confirmation
   menv -file env.sh -startWith export
   menv -backup backup.json           # Backup user env vars
   menv -backup backup.json -sys      # Backup system env vars
@@ -114,6 +115,7 @@ menv -path              # 美化显示 PATH（每行一个路径）
 menv -rm "C:\path"      # 从 PATH 中移除指定路径
 menv -clean             # 清理 PATH（去重 + 移除不存在的目录）
 menv -clean -sys        # 清理系统 PATH
+menv -clean -i          # 清理前交互式确认
 ```
 
 ### 3. **导出环境变量 (`-export`) 已实现**

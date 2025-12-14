@@ -114,8 +114,15 @@ func Remove(remove string, sys bool) error {
 	return nil
 }
 
-// Clean removes duplicate entries and invalid paths from PATH.
-func Clean(sys bool) error {
+// CleanResult contains the preview of paths to be cleaned.
+type CleanResult struct {
+	Duplicates []string
+	Invalid    []string
+	NewPath    string
+}
+
+// PreviewClean analyzes PATH and returns what would be cleaned.
+func PreviewClean(sys bool) (CleanResult, error) {
 	var (
 		paths []string
 		err   error
@@ -127,38 +134,34 @@ func Clean(sys bool) error {
 		paths, err = QueryUserPath()
 	}
 	if err != nil {
-		return err
+		return CleanResult{}, err
 	}
 
 	seen := make(map[string]bool, len(paths))
-	var newPath string
-	duplicates := 0
-	invalid := 0
+	var result CleanResult
 
 	for _, p := range paths {
 		pNorm := strings.ToLower(normalizePath(p))
 
 		if seen[pNorm] {
-			color.Warning("duplicate: %s", p)
-			duplicates++
+			result.Duplicates = append(result.Duplicates, p)
 			continue
 		}
 		seen[pNorm] = true
 
 		if !pathExists(p) {
-			color.Warning("not exist: %s", p)
-			invalid++
+			result.Invalid = append(result.Invalid, p)
 			continue
 		}
 
-		newPath += p + ";"
+		result.NewPath += p + ";"
 	}
 
-	if duplicates == 0 && invalid == 0 {
-		color.Success("PATH is clean, no changes needed")
-		return nil
-	}
+	return result, nil
+}
 
+// ApplyClean applies the cleaned PATH to the registry.
+func ApplyClean(newPath string, sys bool) error {
 	scope := "user"
 	target := "User"
 	if sys {
@@ -170,7 +173,7 @@ func Clean(sys bool) error {
 	if err := cmd.Run(); err != nil {
 		return err
 	}
-	color.Success("cleaned %s PATH: removed %d duplicates, %d invalid paths", scope, duplicates, invalid)
+	color.Success("cleaned %s PATH", scope)
 	return nil
 }
 
