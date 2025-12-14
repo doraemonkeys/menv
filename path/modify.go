@@ -214,3 +214,79 @@ func normalizePath(p string) string {
 	p = strings.TrimSuffix(p, "/")
 	return strings.TrimSpace(p)
 }
+
+// InvalidPath represents an invalid path entry with its index.
+type InvalidPath struct {
+	Index int
+	Path  string
+}
+
+// Check finds invalid paths in PATH that don't exist on filesystem.
+func Check(sys bool) ([]InvalidPath, error) {
+	var (
+		paths []string
+		err   error
+	)
+
+	if sys {
+		paths, err = QuerySystemPath()
+	} else {
+		paths, err = QueryUserPath()
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	var invalid []InvalidPath
+	for i, p := range paths {
+		if !pathExists(p) {
+			invalid = append(invalid, InvalidPath{Index: i + 1, Path: p})
+		}
+	}
+	return invalid, nil
+}
+
+// RemoveInvalidPaths removes specified invalid paths from PATH.
+func RemoveInvalidPaths(paths []InvalidPath, sys bool) error {
+	var (
+		currentPaths []string
+		err          error
+	)
+
+	if sys {
+		currentPaths, err = QuerySystemPath()
+	} else {
+		currentPaths, err = QueryUserPath()
+	}
+	if err != nil {
+		return err
+	}
+
+	toRemove := make(map[string]bool, len(paths))
+	for _, p := range paths {
+		toRemove[strings.ToLower(normalizePath(p.Path))] = true
+	}
+
+	var newPath string
+	for _, p := range currentPaths {
+		pNorm := strings.ToLower(normalizePath(p))
+		if toRemove[pNorm] {
+			continue
+		}
+		newPath += p + ";"
+	}
+
+	scope := "user"
+	target := "User"
+	if sys {
+		scope = "system"
+		target = "Machine"
+	}
+
+	cmd := exec.Command("powershell", "[System.Environment]::SetEnvironmentVariable(\"Path\", \""+newPath+"\", \""+target+"\")")
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	color.Success("removed %d invalid paths from %s PATH", len(paths), scope)
+	return nil
+}

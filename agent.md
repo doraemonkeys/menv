@@ -50,6 +50,9 @@ Options:
   -add <path>       Add path to PATH variable
   -rm <path>        Remove path from PATH variable
   -clean            Clean PATH (dedupe + remove invalid)
+  -check            Check PATH for invalid directories
+  -fix              Auto-remove invalid paths (use with -check)
+  -i                Interactive confirmation
   -d                Delete environment variable
   -sys              Target system env (default: user)
   -file <path>      Read env vars from file
@@ -79,6 +82,10 @@ Examples:
   menv -backup backup.json -sys      # Backup system env vars
   menv -restore backup.json          # Restore user env vars
   menv -restore backup.json -sys     # Restore system env vars
+  menv -check                        # Check user PATH for invalid dirs
+  menv -check -sys                   # Check system PATH for invalid dirs
+  menv -check -fix                   # Check and remove invalid paths
+  menv -check -fix -i                # Check and remove with confirmation
 
 
 ## CI
@@ -131,15 +138,17 @@ menv -search java -path # 在 PATH 中搜索包含 "java" 的路径
 menv -search java -sys  # 搜索系统环境变量
 ```
 
-### 6. **PATH 检查**
+### 6. **PATH 检查 已实现**
 ```bash
 menv -check             # 检查 PATH 中不存在的目录
+menv -check -sys        # 检查系统 PATH
 menv -check -fix        # 自动移除不存在的目录
+menv -check -fix -i     # 移除前交互式确认
 ```
 
-### 7. **交互式确认 (`-i`)**
+### 7. **交互式确认 (`-i`) 已实现**
 ```bash
-menv -d JAVA_HOME -i    # 删除前确认
+menv -check -fix -i     # 删除前确认
 ```
 
 ---

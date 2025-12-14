@@ -187,3 +187,25 @@ func createTempFile(t *testing.T, dir string) string {
 	f.Close()
 	return f.Name()
 }
+
+func TestInvalidPathType(t *testing.T) {
+	p := InvalidPath{Index: 5, Path: "C:\\nonexistent"}
+
+	if p.Index != 5 {
+		t.Errorf("expected Index=5, got %d", p.Index)
+	}
+	if p.Path != "C:\\nonexistent" {
+		t.Errorf("expected Path='C:\\nonexistent', got %q", p.Path)
+	}
+}
+
+func TestCheckFunctionReturnsType(t *testing.T) {
+	result, err := Check(false)
+
+	if err != nil {
+		t.Skipf("Skipping: unable to query PATH: %v", err)
+	}
+
+	// Verify return type is correct ([]InvalidPath)
+	_ = result
+}

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/doraemonkeys/menv/cmd"
 	"github.com/doraemonkeys/menv/color"
@@ -25,6 +27,9 @@ func init() {
 		fmt.Println("  -add <path>       Add path to PATH variable")
 		fmt.Println("  -rm <path>        Remove path from PATH variable")
 		fmt.Println("  -clean            Clean PATH (dedupe + remove invalid)")
+		fmt.Println("  -check            Check PATH for invalid directories")
+		fmt.Println("  -fix              Auto-remove invalid paths (use with -check)")
+		fmt.Println("  -i                Interactive confirmation")
 		fmt.Println("  -d                Delete environment variable")
 		fmt.Println("  -sys              Target system env (default: user)")
 		fmt.Println("  -file <path>      Read env vars from file")
@@ -62,6 +67,10 @@ func init() {
 		fmt.Println("  menv -restore backup.json -sys     # Restore system env vars")
 		fmt.Println("  menv -search java                  # Search env vars for 'java'")
 		fmt.Println("  menv -search java -path            # Search PATH for 'java'")
+		fmt.Println("  menv -check                        # Check user PATH for invalid dirs")
+		fmt.Println("  menv -check -sys                   # Check system PATH for invalid dirs")
+		fmt.Println("  menv -check -fix                   # Check and remove invalid paths")
+		fmt.Println("  menv -check -fix -i                # Check and remove with confirmation")
 	}
 }
 
@@ -114,35 +123,15 @@ func run(args []string) error {
 		return restoreEnvVars(*cmd.RestorePath)
 	}
 
+	// Handle PATH modification commands
+	if handled, err := handlePathCommands(args); handled {
+		return err
+	}
+
 	// Validate arguments
-	noArgsRequired := *cmd.RemovePath != "" || *cmd.CleanPath
-	if !noArgsRequired && (*cmd.DelEnv && *cmd.EnvFilePath == "" && len(args) != 1 || len(os.Args) <= 1) {
+	if *cmd.DelEnv && *cmd.EnvFilePath == "" && len(args) != 1 || len(os.Args) <= 1 {
 		flag.Usage()
 		return nil
-	}
-
-	// Handle -add flag: add path to PATH
-	if *cmd.AddPath != "" {
-		if len(args) != 0 {
-			return fmt.Errorf("unexpected arguments: %v", args)
-		}
-		return path.Add(*cmd.AddPath, *cmd.SetSystem)
-	}
-
-	// Handle -rm flag: remove path from PATH
-	if *cmd.RemovePath != "" {
-		if len(args) != 0 {
-			return fmt.Errorf("unexpected arguments: %v", args)
-		}
-		return path.Remove(*cmd.RemovePath, *cmd.SetSystem)
-	}
-
-	// Handle -clean flag: clean PATH
-	if *cmd.CleanPath {
-		if len(args) != 0 {
-			return fmt.Errorf("unexpected arguments: %v", args)
-		}
-		return path.Clean(*cmd.SetSystem)
 	}
 
 	// Handle -file flag: process env file
@@ -152,13 +141,53 @@ func run(args []string) error {
 
 	// Handle -d flag: delete env var
 	if *cmd.DelEnv {
-		if *cmd.SetSystem {
-			return env.UnsetSystem(args[0])
-		}
-		return env.Unset(args[0])
+		return deleteEnvVar(args[0])
 	}
 
 	// Default: set env var
+	return setEnvVar(args)
+}
+
+func handlePathCommands(args []string) (handled bool, err error) {
+	if *cmd.AddPath != "" {
+		if len(args) != 0 {
+			return true, fmt.Errorf("unexpected arguments: %v", args)
+		}
+		return true, path.Add(*cmd.AddPath, *cmd.SetSystem)
+	}
+
+	if *cmd.RemovePath != "" {
+		if len(args) != 0 {
+			return true, fmt.Errorf("unexpected arguments: %v", args)
+		}
+		return true, path.Remove(*cmd.RemovePath, *cmd.SetSystem)
+	}
+
+	if *cmd.CleanPath {
+		if len(args) != 0 {
+			return true, fmt.Errorf("unexpected arguments: %v", args)
+		}
+		return true, path.Clean(*cmd.SetSystem)
+	}
+
+	if *cmd.CheckPath {
+		if len(args) != 0 {
+			return true, fmt.Errorf("unexpected arguments: %v", args)
+		}
+		return true, checkPath()
+	}
+
+	return false, nil
+}
+
+func deleteEnvVar(key string) error {
+	if *cmd.SetSystem {
+		return env.UnsetSystem(key)
+	}
+	return env.Unset(key)
+}
+
+func setEnvVar(args []string) error {
 	if len(args) < 2 {
 		return fmt.Errorf("missing value for key '%s'", args[0])
 	}
@@ -387,4 +416,54 @@ func searchPath(keyword string) error {
 	}
 	fmt.Printf("\nFound: %d\n", len(results))
 	return nil
+}
+
+func checkPath() error {
+	scope := "user"
+	if *cmd.SetSystem {
+		scope = "system"
+	}
+
+	color.Info("Checking %s PATH for invalid directories...", scope)
+
+	invalid, err := path.Check(*cmd.SetSystem)
+	if err != nil {
+		return err
+	}
+
+	if len(invalid) == 0 {
+		color.Success("All paths are valid!")
+		return nil
+	}
+
+	fmt.Println()
+	for _, p := range invalid {
+		fmt.Printf("%s%3d%s  %s%s%s\n", color.Cyan, p.Index, color.Reset, color.Red, p.Path, color.Reset)
+	}
+	fmt.Printf("\nFound %d invalid path(s)\n", len(invalid))
+
+	if !*cmd.FixPath {
+		color.Info("Use -fix to remove invalid paths")
+		return nil
+	}
+
+	if *cmd.Interactive {
+		if !confirmAction(fmt.Sprintf("Remove %d invalid path(s)?", len(invalid))) {
+			color.Warning("Cancelled")
+			return nil
+		}
+	}
+
+	return path.RemoveInvalidPaths(invalid, *cmd.SetSystem)
+}
+
+func confirmAction(prompt string) bool {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Printf("%s [y/N]: ", prompt)
+	input, err := reader.ReadString('\n')
+	if err != nil {
+		return false
+	}
+	input = strings.TrimSpace(strings.ToLower(input))
+	return input == "y" || input == "yes"
 }
