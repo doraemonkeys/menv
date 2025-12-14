@@ -2,6 +2,10 @@
 # ?= 表示如果变量未定义才赋值，$$ 是为了在 Makefile 中转义 $
 GOBIN ?= $$(go env GOPATH)/bin
 
+# 运行所有检查：测试、覆盖率检查、静态检查、文件数量检查
+.PHONY: ci
+ci: test check-coverage lint check-file-count
+
 # .PHONY 声明伪目标，表示这些不是真实的文件名，每次都需要执行
 # 安装测试覆盖率检查工具
 .PHONY: install-go-test-coverage

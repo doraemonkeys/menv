@@ -2,3 +2,5 @@ test.sh
 *.exe
 cover.out
 TODO
+*_gitignore*
+*gitignore_*
