@@ -1,0 +1,37 @@
+# .testcoverage.yml
+# go-test-coverage 配置文件
+# https://github.com/vladopajic/go-test-coverage
+
+profile: cover.out
+local-prefix: setenv
+
+threshold:
+  # 每个 package 覆盖率必须 ≥ 60%
+  package: 60
+  # 总体覆盖率必须 ≥ 60%
+  total: 60
+  # 单个文件覆盖率不做限制
+  file: 0
+
+
+# Holds regexp rules which will override thresholds for matched files or packages 
+# using their paths.
+#
+# First rule from this list that matches file or package is going to apply 
+# new threshold to it. If project has multiple rules that match same path, 
+# override rules should be listed in order from specific to more general rules.
+override:
+  # Increase coverage threshold to 100% for `foo` package 
+  # (default is 80, as configured above in this example).
+  - path: ^pkg/lib/foo$
+    threshold: 100
+
+# 如果代码中使用了忽略覆盖率的指令（如 //go:coverage-ignore），是否强制要求开发人员在旁边写注释解释原因。
+force-annotation-comment: true
+
+# 排除不需要检查覆盖率的包（可选）
+# exclude:
+#   paths:
+#     - .*_mock\.go  # 排除 mock 文件
+#     - main\.go     # 排除 main.go（通常 main 函数难以测试）
+
