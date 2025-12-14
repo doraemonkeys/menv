@@ -37,15 +37,15 @@ func enableVirtualTerminal() {
 	stdout := windows.Handle(os.Stdout.Fd())
 	var mode uint32
 	if err := windows.GetConsoleMode(stdout, &mode); err == nil {
-		windows.SetConsoleMode(stdout, mode|windows.ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+		_ = windows.SetConsoleMode(stdout, mode|windows.ENABLE_VIRTUAL_TERMINAL_PROCESSING)
 	}
 }
 
 // Print functions with colors
 
-func printColored(color, format string, args ...any) {
-	fmt.Printf("%s%s%s", color, fmt.Sprintf(format, args...), Reset)
-}
+// func printColored(color, format string, args ...any) {
+// 	fmt.Printf("%s%s%s", color, fmt.Sprintf(format, args...), Reset)
+// }
 
 func printColoredLn(color, format string, args ...any) {
 	fmt.Printf("%s%s%s\n", color, fmt.Sprintf(format, args...), Reset)

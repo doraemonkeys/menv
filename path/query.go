@@ -9,7 +9,6 @@ import (
 const (
 	userEnvRegPath   = "HKEY_CURRENT_USER\\Environment"
 	systemEnvRegPath = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment"
-	pathKeyword      = "Path    REG_SZ"
 )
 
 // QueryUserPath queries the user's PATH environment variable from registry.
@@ -19,14 +18,7 @@ func QueryUserPath() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	nowPath := strings.TrimSpace(string(pathByte))
-	if !strings.Contains(nowPath, pathKeyword) {
-		return nil, errors.New("query path failed, get path: " + nowPath)
-	}
-
-	nowPath = strings.TrimSpace(nowPath[strings.LastIndex(nowPath, pathKeyword)+len(pathKeyword):])
-	return splitAndCleanPath(nowPath), nil
+	return parsePathOutput(string(pathByte))
 }
 
 // QuerySystemPath queries the system PATH environment variable from registry.
@@ -36,14 +28,30 @@ func QuerySystemPath() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	return parsePathOutput(string(pathByte))
+}
 
-	nowPath := strings.TrimSpace(string(pathByte))
-	if !strings.Contains(nowPath, pathKeyword) {
-		return nil, errors.New("query path failed")
+func parsePathOutput(output string) ([]string, error) {
+	output = strings.TrimSpace(output)
+
+	// Find Path line and extract value after REG_SZ or REG_EXPAND_SZ
+	lines := strings.Split(output, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if !strings.HasPrefix(strings.ToLower(line), "path") {
+			continue
+		}
+
+		// Try REG_SZ first, then REG_EXPAND_SZ
+		for _, regType := range []string{"REG_EXPAND_SZ", "REG_SZ"} {
+			if idx := strings.Index(line, regType); idx != -1 {
+				pathValue := strings.TrimSpace(line[idx+len(regType):])
+				return splitAndCleanPath(pathValue), nil
+			}
+		}
 	}
 
-	nowPath = strings.TrimSpace(nowPath[strings.LastIndex(nowPath, pathKeyword)+len(pathKeyword):])
-	return splitAndCleanPath(nowPath), nil
+	return nil, errors.New("query path failed")
 }
 
 // splitAndCleanPath splits path by semicolon and removes empty entries.
