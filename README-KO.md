@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/egonelbre/gophers/master/vector/superhero/zorro.svg" width="120" alt="menv logo">
+  <img src="./assets/logo2.png" width="120" alt="menv logo">
 </p>
 
 <h1 align="center">✨ menv ✨</h1>
