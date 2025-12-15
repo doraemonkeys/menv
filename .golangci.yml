@@ -18,6 +18,14 @@ linters:
     - gocognit   # 检查认知复杂度
     # - lll      # 检查单行长度
     - revive  # 可以用来扩充更多检查
+    - errcheck       # 检查未处理的错误返回值
+    - errorlint      # 检查 Go 1.13+ 错误处理最佳实践
+    - bodyclose      # 检查 HTTP response body 是否关闭
+    # - noctx          # 检查 HTTP 请求是否传递 context
+    - gocritic       # 综合性代码审查
+    - unconvert      # 检查不必要的类型转换
+    - prealloc       # 检查 slice 是否可预分配
+    - dupl           # 检查重复代码块
   exclusions:
     # 排除测试文件（通常测试文件会比较长或逻辑特殊，如果也要检查可去掉此行）
     paths:
@@ -41,7 +49,7 @@ linters:
         - name: file-length-limit
           disabled: false
           arguments:
-            - max: 800
+            - max: 700
               skipComments: true
               skipBlankLines: true
 

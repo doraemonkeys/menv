@@ -185,9 +185,7 @@ func pathExists(p string) bool {
 
 func expandPath(p string) string {
 	p = os.ExpandEnv(p)
-	p = os.Expand(p, func(key string) string {
-		return os.Getenv(key)
-	})
+	p = os.Expand(p, os.Getenv)
 	return expandWindowsEnv(p)
 }
 
