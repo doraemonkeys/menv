@@ -58,7 +58,7 @@ func init() {
 		fmt.Println("  menv -clean                        # Clean user PATH")
 		fmt.Println("  menv -clean -sys                   # Clean system PATH")
 		fmt.Println("  menv -clean -y                     # Clean without confirmation")
-		fmt.Println("  menv -file env.sh -startWith export")
+		fmt.Println("  menv -file env.sh -startWith export  # Set env vars from file")
 		fmt.Println("  menv -export env.sh                # Export user env as shell")
 		fmt.Println("  menv -export env.bat               # Export user env as batch")
 		fmt.Println("  menv -export env.json              # Export user env as JSON")
