@@ -11,11 +11,12 @@ import (
 	"github.com/doraemonkeys/menv/color"
 	"github.com/doraemonkeys/menv/env"
 	"github.com/doraemonkeys/menv/path"
+	"github.com/doraemonkeys/menv/version"
 )
 
 func init() {
 	flag.Usage = func() {
-		fmt.Println(color.Sprintf(color.BoldCyan, "menv") + " - Windows Environment Variable Manager")
+		fmt.Println(color.Sprintf(color.BoldCyan, "menv")+" v"+version.Version, "- Windows Environment Variable Manager")
 		fmt.Println()
 		color.Info("Usage:")
 		fmt.Println("  menv [options] [key] [value]")
