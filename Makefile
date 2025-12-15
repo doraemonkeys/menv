@@ -61,3 +61,11 @@ clean:
 .PHONY: build
 build:
 	go build
+
+.PHONY: release-windows
+release-windows:
+	bash release.sh windows
+
+.PHONY: release-clean
+release-clean:
+	bash release.sh clean
