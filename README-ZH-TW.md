@@ -36,6 +36,10 @@
 
 ## 📦 安裝
 
+從 [GitHub Releases](https://github.com/doraemonkeys/menv/releases) 下載最新版本，並將其新增到 PATH。
+
+或者透過 Go 安裝：
+
 ```bash
 go install github.com/doraemonkeys/menv@latest
 ```

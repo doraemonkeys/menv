@@ -36,6 +36,10 @@
 
 ## 📦 Installation
 
+Download the latest binary from [GitHub Releases](https://github.com/doraemonkeys/menv/releases) and add it to your PATH.
+
+Or install via Go:
+
 ```bash
 go install github.com/doraemonkeys/menv@latest
 ```

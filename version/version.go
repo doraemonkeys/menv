@@ -8,7 +8,7 @@ var (
 	BuildTime = "unknown time" // will insert in build time
 )
 
-func PrintVersion() {
+func PrintVersion() { // coverage-ignore
 	fmt.Println("menv", "v"+Version)
 	fmt.Println("BuildTime:", BuildTime)
 	fmt.Println("BuildHash:", BuildHash)
