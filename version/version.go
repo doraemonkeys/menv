@@ -3,7 +3,7 @@ package version
 import "fmt"
 
 var (
-	Version   = "0.1.1"
+	Version   = "0.1.2"
 	BuildHash = "unknown hash" // will insert in build time
 	BuildTime = "unknown time" // will insert in build time
 )
