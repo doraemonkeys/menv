@@ -1,5 +1,5 @@
 # .github/workflows/release.yml
-name: Go Release with Frontend
+name: Go Release
 
 on:
   workflow_dispatch:
