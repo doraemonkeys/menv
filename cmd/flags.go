@@ -12,7 +12,7 @@ var (
 	CleanPath   = flag.Bool("clean", false, "clean PATH (dedupe + remove invalid)")
 	CheckPath   = flag.Bool("check", false, "check PATH for invalid directories")
 	FixPath     = flag.Bool("fix", false, "auto-remove invalid paths (use with -check)")
-	Interactive = flag.Bool("i", false, "interactive confirmation")
+	Yes         = flag.Bool("y", false, "skip confirmation prompts")
 	ListEnv     = flag.Bool("list", false, "list all env vars")
 	GetEnv      = flag.String("get", "", "get env var value")
 	ShowPath    = flag.Bool("path", false, "display PATH")

@@ -84,7 +84,7 @@ menv -search java -path     # PATH 内で "java" を含むパスを検索
 ```bash
 menv -check                 # PATH 内の無効なディレクトリをチェック
 menv -check -fix            # 無効なパスを自動削除
-menv -check -fix -i         # 各パスを削除する前に確認
+menv -check -fix -y         # 確認なしで直接削除
 ```
 
 ### 💾 バックアップと復元

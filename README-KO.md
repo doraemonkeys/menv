@@ -84,7 +84,7 @@ menv -search java -path     # PATH에서 "java"를 포함하는 경로 검색
 ```bash
 menv -check                 # PATH에서 유효하지 않은 디렉토리 확인
 menv -check -fix            # 유효하지 않은 경로 자동 제거
-menv -check -fix -i         # 각 경로 제거 전 확인
+menv -check -fix -y         # 확인 없이 바로 제거
 ```
 
 ### 💾 백업 및 복원

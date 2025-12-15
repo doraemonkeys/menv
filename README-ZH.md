@@ -84,7 +84,7 @@ menv -search java -path     # 在 PATH 中搜索包含 "java" 的路径
 ```bash
 menv -check                 # 检查 PATH 中的无效目录
 menv -check -fix            # 自动移除无效路径
-menv -check -fix -i         # 移除每个路径前确认
+menv -check -fix -y         # 无需确认直接移除
 ```
 
 ### 💾 备份与恢复

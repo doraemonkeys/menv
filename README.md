@@ -84,7 +84,7 @@ menv -search java -path     # Search for paths containing "java" in PATH
 ```bash
 menv -check                 # Check for invalid directories in PATH
 menv -check -fix            # Automatically remove invalid paths
-menv -check -fix -i         # Confirm before removing each path
+menv -check -fix -y         # Remove without confirmation
 ```
 
 ### 💾 Backup and Restore

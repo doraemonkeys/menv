@@ -29,7 +29,7 @@ func init() {
 		fmt.Println("  -clean            Clean PATH (dedupe + remove invalid)")
 		fmt.Println("  -check            Check PATH for invalid directories")
 		fmt.Println("  -fix              Auto-remove invalid paths (use with -check)")
-		fmt.Println("  -i                Interactive confirmation")
+		fmt.Println("  -y                Skip confirmation prompts")
 		fmt.Println("  -d                Delete environment variable")
 		fmt.Println("  -sys              Target system env (default: user)")
 		fmt.Println("  -file <path>      Read env vars from file")
@@ -56,7 +56,7 @@ func init() {
 		fmt.Println("  menv -rm \"C:\\bin\" -sys             # Remove from system PATH")
 		fmt.Println("  menv -clean                        # Clean user PATH")
 		fmt.Println("  menv -clean -sys                   # Clean system PATH")
-		fmt.Println("  menv -clean -i                     # Clean with confirmation")
+		fmt.Println("  menv -clean -y                     # Clean without confirmation")
 		fmt.Println("  menv -file env.sh -startWith export")
 		fmt.Println("  menv -export env.sh                # Export user env as shell")
 		fmt.Println("  menv -export env.bat               # Export user env as batch")
@@ -71,7 +71,7 @@ func init() {
 		fmt.Println("  menv -check                        # Check user PATH for invalid dirs")
 		fmt.Println("  menv -check -sys                   # Check system PATH for invalid dirs")
 		fmt.Println("  menv -check -fix                   # Check and remove invalid paths")
-		fmt.Println("  menv -check -fix -i                # Check and remove with confirmation")
+		fmt.Println("  menv -check -fix -y                # Check and remove without confirmation")
 	}
 }
 
@@ -446,7 +446,7 @@ func cleanPath() error {
 	}
 	fmt.Printf("\nFound %d duplicate(s), %d invalid path(s)\n", len(result.Duplicates), len(result.Invalid))
 
-	if *cmd.Interactive {
+	if !*cmd.Yes {
 		total := len(result.Duplicates) + len(result.Invalid)
 		if !confirmAction(fmt.Sprintf("Remove %d path(s)?", total)) {
 			color.Warning("Cancelled")
@@ -486,7 +486,7 @@ func checkPath() error {
 		return nil
 	}
 
-	if *cmd.Interactive {
+	if !*cmd.Yes {
 		if !confirmAction(fmt.Sprintf("Remove %d invalid path(s)?", len(invalid))) {
 			color.Warning("Cancelled")
 			return nil
